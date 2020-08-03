@@ -82,6 +82,14 @@ class Database_Utils:
         return data
 
     @staticmethod
+    def read_from_db_only_entered():
+        conn = sqlite3.connect('people.db')
+        c = conn.cursor()
+        c.execute('SELECT * FROM my_table WHERE entry_state="Entered"')
+        data = c.fetchall()
+        return data
+
+    @staticmethod
     def read_last_entry():
         conn = sqlite3.connect('people.db')
         c = conn.cursor()
@@ -92,3 +100,11 @@ class Database_Utils:
     def write_to_file(data, filename):
         with open(filename, 'wb') as file:
             file.write(data)
+
+    @staticmethod
+    def change_state(c_id,time):
+        conn = sqlite3.connect('people.db')
+        c = conn.cursor()
+        c.execute('SELECT * FROM my_table')
+        c.execute('UPDATE my_table SET entry_state="Exited", exit_time=(?) WHERE id=(?)',(time,c_id))
+        conn.commit()

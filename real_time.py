@@ -53,7 +53,7 @@ except:
 # print(fs_mod)
 try:
     temp_database=[]
-    data = da.read_from_db()
+    data = da.read_from_db_only_entered()
     for d in data:
         with open('temp.jpg','wb') as file:
             file.write(d[1])
