@@ -68,44 +68,45 @@ while True:
     check_tuple = type(boxes) is tuple
     #print(boxes)
     if len(boxes)>=1 and not check_tuple:
-        box = boxes[0]
-        x,y,w,h = box[0],box[1],box[2],box[3]
-        tup_box = (x,y,w,h)
-        #print(tup_box)
-        if w>120 and h >120:
-            cv2.rectangle(frame,(x,y),(x+w,y+h),(255,0,0),2)
-            face = f.return_face(frame,tup_box)
-            real_emd = f.face_embedding(model,face)
-            
-            if len(temp_database)==0:
-                print("Not possible")
+        for box in boxes:
+            #box = boxes[0]
+            x,y,w,h = box[0],box[1],box[2],box[3]
+            tup_box = (x,y,w,h)
+            #print(tup_box)
+            if w>120 and h >120:
+                cv2.rectangle(frame,(x,y),(x+w,y+h),(255,0,0),2)
+                face = f.return_face(frame,tup_box)
+                real_emd = f.face_embedding(model,face)
+                
+                if len(temp_database)==0:
+                    print("Not possible")
+                else:
+                    count =0
+                    for t_d in temp_database:
+                        id, emd,entered,entry_time, exit_time = t_d
+                        print("ss",f.compare_embeddings(emd,real_emd))
+                        if f.compare_embeddings(emd,real_emd)<12:
+                            ti = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                            da.change_state(id,ti)
+                        else:
+                            count+=1
+                        # if count==len(temp_database):
+                        #     state = 'Entered'
+                        #     enty_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                        #     p+=1
+                        #     people = (p,real_emd,state,entry_time,"")
+                        #     temp_database.append(people)
+                        #     da.data_entry(p,face,state,enty_time,"")
+
+
+
+                print(len(temp_database))
             else:
-                count =0
-                for t_d in temp_database:
-                    id, emd,entered,entry_time, exit_time = t_d
-                    print("ss",f.compare_embeddings(emd,real_emd))
-                    if f.compare_embeddings(emd,real_emd)<12:
-                        ti = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                        da.change_state(id,ti)
-                    else:
-                        count+=1
-                    # if count==len(temp_database):
-                    #     state = 'Entered'
-                    #     enty_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                    #     p+=1
-                    #     people = (p,real_emd,state,entry_time,"")
-                    #     temp_database.append(people)
-                    #     da.data_entry(p,face,state,enty_time,"")
+                cv2.rectangle(frame,(x,y),(x+w,y+h),(0,0,255),2)
+            cv2.imshow('Video', frame)
 
-
-
-            print(len(temp_database))
-        else:
-            cv2.rectangle(frame,(x,y),(x+w,y+h),(0,0,255),2)
-        cv2.imshow('Video', frame)
-
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
     else:
         cv2.imshow('Video', frame)
 
