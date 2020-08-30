@@ -14,14 +14,15 @@ from datetime import datetime
 
 da = Database_Utils()
 da.create_table()
-
-print("done")
+print("table create done")
 #------database end------_#
 #-----------------------------------------------------#
+print("Starting Video.....")
 cap = cv2.VideoCapture(0)
 #-----------------------------------------------------#
 f= Face_utils()
 #-----------------------------------------------------#
+print("Loading model.....")
 model = load_model("facenet_keras.h5")
 cascade_path = "haarcascade_frontalface_default.xml"
 #-----------------------------------------------------#
@@ -44,11 +45,7 @@ try:
         da.write_to_file(img_blob,'/home/pi/Peple_counter/faces'+'/'+str(id)+'.jpg')
 except:
     print("read_from_db_failed")
-# face_dir = '/home/pi/Peple_counter/faces'
-# fs = os.listdir(face_dir)
-# print(fs)
-# fs_mod = [int(i[:-4]) for i in fs]
-# print(fs_mod)
+
 def update_temp_database():
     try:
         temp_database=[]
@@ -82,19 +79,16 @@ while True:
     temp_database = update_temp_database()
     ret, frame = cap.read()
     boxes = f.detect_face_haar_cascade(cascade_path,frame)
+    #cheak for if the boxes are tuple or not
     check_tuple = type(boxes) is tuple
-    #print(boxes)
     if len(boxes)>=1 and not check_tuple:
         for box in boxes:
-            #box = boxes[0]
             x,y,w,h = box[0],box[1],box[2],box[3]
             tup_box = (x,y,w,h)
-            #print(tup_box)
             if w>60 and h >60:
                 cv2.rectangle(frame,(x,y),(x+w,y+h),(255,0,0),2)
                 face = f.return_face(frame,tup_box)
                 real_emd = f.face_embedding(model,face)
-                
                 if len(temp_database)==0:
                     state = 'Entered'
                     enty_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
