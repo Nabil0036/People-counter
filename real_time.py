@@ -42,7 +42,7 @@ try:
         img_blob = d[1]
         id = d[0]
         #/home/pi/Peple_counter/faces
-        da.write_to_file(img_blob,'/home/pi/Peple_counter/faces'+'/'+str(id)+'.jpg')
+        da.write_to_file(img_blob,'/home/pi/People_counter/faces'+'/'+str(id)+'.jpg')
 except:
     print("read_from_db_failed")
 
@@ -67,13 +67,13 @@ def update_temp_database():
 temp_database = update_temp_database()
 p=a
 #---------------------------------------------------------#
-image = cv2.imread('/home/pi/Peple_counter/nabil2.jpg')
-faces = f.detect_face_haar_cascade('/home/pi/Peple_counter/haarcascade_frontalface_default.xml',image)
-box = faces[0]
-x1,y1,x2,y2 = box[0],box[1],box[2],box[3]
-print(x1,y2,x2,y2)
-roi = f.return_face(image,box)
-nab_emd = f.face_embedding(model, roi)
+# image = cv2.imread('/home/pi/Peple_counter/nabil2.jpg')
+# faces = f.detect_face_haar_cascade('/home/pi/Peple_counter/haarcascade_frontalface_default.xml',image)
+# box = faces[0]
+# x1,y1,x2,y2 = box[0],box[1],box[2],box[3]
+# print(x1,y2,x2,y2)
+# roi = f.return_face(image,box)
+# nab_emd = f.face_embedding(model, roi)
 #---------------------------------------------------------------------------#
 while True:
     temp_database = update_temp_database()

@@ -66,8 +66,8 @@ class Database_Utils:
     def data_entry(id, img,entry_state="",entry_time="",exit_time=""):
         conn = sqlite3.connect('people.db')
         c = conn.cursor()
-        cv2.imwrite("/home/pi/Peple_counter/hudai.png",img)
-        with open("/home/pi/Peple_counter/hudai.png","rb") as file:
+        cv2.imwrite("/home/pi/People_counter/hudai.png",img)
+        with open("/home/pi/People_counter/hudai.png","rb") as file:
             pic = file.read()
 
         c.execute("INSERT INTO my_table (id,image,entry_state,entry_time,exit_time) VALUES (?, ?, ?, ?, ?)",(id,pic,entry_state,entry_time,exit_time))
