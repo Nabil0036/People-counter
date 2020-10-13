@@ -8,8 +8,7 @@ import sqlite3
 import array
 import pickle
 from datetime import datetime
-
-
+from pytictoc import TicToc
 #---------for database----------#
 
 da = Database_Utils()
@@ -42,7 +41,7 @@ try:
         img_blob = d[1]
         id = d[0]
         #/home/pi/Peple_counter/faces
-        da.write_to_file(img_blob,'/home/pi/People_counter/faces'+'/'+str(id)+'.jpg')
+        da.write_to_file(img_blob,'/faces'+'/'+str(id)+'.jpg')
 except:
     print("read_from_db_failed")
 
@@ -75,12 +74,22 @@ p=a
 # roi = f.return_face(image,box)
 # nab_emd = f.face_embedding(model, roi)
 #---------------------------------------------------------------------------#
+co =0
+t = TicToc()
+t.tic()
 while True:
+    co+=1
+    hula = t.toc()
+    if co==1:
+        print("hello",hula)
+    if co==20:
+        print("hoooolo",hula)
     temp_database = update_temp_database()
     ret, frame = cap.read()
     boxes = f.detect_face_haar_cascade(cascade_path,frame)
     #cheak for if the boxes are tuple or not
     check_tuple = type(boxes) is tuple
+    #print("ulla",boxes)
     if len(boxes)>=1 and not check_tuple:
         for box in boxes:
             x,y,w,h = box[0],box[1],box[2],box[3]
@@ -124,7 +133,6 @@ while True:
                 break
     else:
         cv2.imshow('Video', frame)
-
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
         continue

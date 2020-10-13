@@ -8,8 +8,8 @@ import sqlite3
 import array
 import pickle
 from datetime import datetime
-
-
+from imutils.video import WebcamVideoStream as webcam
+from imutils.video import FPS
 #---------for database----------#
 #conn = sqlite3.connect('people.db')
 #c = conn.cursor()
@@ -20,21 +20,21 @@ da.create_table()
 print("done")
 #------database end------_#
 #-----------------------------------------------------#
-cap = cv2.VideoCapture(1)
+cap = cv2.VideoCapture(-1)
+#vs = webcam(-1).start()
 #-----------------------------------------------------#
 f= Face_utils()
 #-----------------------------------------------------#
 model = load_model("facenet_keras.h5")
 cascade_path = "haarcascade_frontalface_default.xml"
 #-----------------------------------------------------#
-
 try:
     data = da.read_from_db()
     for d in data:
         img_blob = d[1]
         id = d[0]
         #/home/pi/Peple_counter/faces
-        da.write_to_file(img_blob,'/home/pi/Peple_counter/faces'+'/'+str(id)+'.jpg')
+        da.write_to_file(img_blob,'/faces'+'/'+str(id)+'.jpg')
 except:
     print("read_from_db_failed")
 # face_dir = '/home/pi/Peple_counter/faces'
@@ -61,9 +61,12 @@ def update_tempdatabase():
 temp_database = update_tempdatabase()
 #---------------------------------------------------------#
 #---------------------------------------------------------------------------#
+fps = FPS().start()
 while True:
+    fps.update()
     temp_database = update_tempdatabase()
     ret, frame = cap.read()
+    #frame = vs.read()
     boxes = f.detect_face_haar_cascade(cascade_path,frame)
     check_tuple = type(boxes) is tuple
     #print(boxes)
@@ -117,5 +120,8 @@ while True:
     
 
 # When everything is done, release the capture
+fps.stop()
+print("[INFO] elasped time: {:.2f}".format(fps.elapsed()))
+print("[INFO] approx. FPS: {:.2f}".format(fps.fps()))
 cap.release()
 cv2.destroyAllWindows() 

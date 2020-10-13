@@ -28,6 +28,24 @@ class Face_utils:
             return None, None
         return faces
 
+    @staticmethod
+    def detect_face_dnn(net,image,con=0.9):
+        boxes = []
+        blob = cv2.dnn.blobFromImage(cv2.resize(image, (300, 300)), 1.0, (300, 300), (104.0, 177.0, 123.0))
+        (h, w) = image.shape[:2]
+        net.setInput(blob)
+        detections = net.forward()
+        for i in range(0, detections.shape[2]):
+            confidence = detections[0, 0, i, 2]
+            if confidence < con:
+                continue
+            box = (detections[0, 0, i, 3:7] * np.array([w, h, w, h])).astype("int")
+            x1_,y1_,x2_,y2_ = box[0],box[1], box[2], box[3]
+            w_ = x2_ - x1_
+            h_ = y2_ - y1_
+            box = [x1_,y1_,w_,h_]
+            boxes.append(box)
+        return boxes
 
     @staticmethod
     def return_face(image,box):
@@ -66,8 +84,8 @@ class Database_Utils:
     def data_entry(id, img,entry_state="",entry_time="",exit_time=""):
         conn = sqlite3.connect('people.db')
         c = conn.cursor()
-        cv2.imwrite("/home/pi/People_counter/hudai.png",img)
-        with open("/home/pi/People_counter/hudai.png","rb") as file:
+        cv2.imwrite("hudai.png",img)
+        with open("hudai.png","rb") as file:
             pic = file.read()
 
         c.execute("INSERT INTO my_table (id,image,entry_state,entry_time,exit_time) VALUES (?, ?, ?, ?, ?)",(id,pic,entry_state,entry_time,exit_time))
