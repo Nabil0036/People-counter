@@ -108,6 +108,14 @@ class Database_Utils:
         return data
 
     @staticmethod
+    def read_from_db_only_exited():
+        conn = sqlite3.connect('people.db')
+        c = conn.cursor()
+        c.execute('SELECT * FROM my_table WHERE entry_state="Exited"')
+        data = c.fetchall()
+        return data
+
+    @staticmethod
     def read_last_entry():
         conn = sqlite3.connect('people.db')
         c = conn.cursor()

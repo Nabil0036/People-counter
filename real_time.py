@@ -9,6 +9,9 @@ import array
 import pickle
 from datetime import datetime
 from pytictoc import TicToc
+from imutils.video import WebcamVideoStream as webcam
+from imutils.video import FPS
+
 #---------for database----------#
 
 da = Database_Utils()
@@ -17,7 +20,9 @@ print("table create done")
 #------database end------_#
 #-----------------------------------------------------#
 print("Starting Video.....")
-cap = cv2.VideoCapture(0)
+#cap = cv2.VideoCapture(0)
+vs = webcam(0).start()
+print("Entry Camera found")
 #-----------------------------------------------------#
 f= Face_utils()
 #-----------------------------------------------------#
@@ -74,22 +79,25 @@ p=a
 # roi = f.return_face(image,box)
 # nab_emd = f.face_embedding(model, roi)
 #---------------------------------------------------------------------------#
+#------------------------------------#
+path_proto = 'deploy.prototxt.txt'
+path_model = 'res10_300x300_ssd_iter_140000.caffemodel'
+net = cv2.dnn.readNetFromCaffe(path_proto, path_model)
+#--------------------------------------#
 co =0
 t = TicToc()
 t.tic()
+fps = FPS().start()
 while True:
-    co+=1
-    hula = t.toc()
-    if co==1:
-        print("hello",hula)
-    if co==20:
-        print("hoooolo",hula)
+    fps.update()
+    entered_people = len(da.read_from_db_only_entered())
     temp_database = update_temp_database()
-    ret, frame = cap.read()
-    boxes = f.detect_face_haar_cascade(cascade_path,frame)
+    #ret, frame = cap.read()
+    frame = vs.read()
+    #boxes = f.detect_face_haar_cascade(cascade_path,frame)
+    boxes = f.detect_face_dnn(net,frame,0.5)
     #cheak for if the boxes are tuple or not
     check_tuple = type(boxes) is tuple
-    #print("ulla",boxes)
     if len(boxes)>=1 and not check_tuple:
         for box in boxes:
             x,y,w,h = box[0],box[1],box[2],box[3]
@@ -127,18 +135,22 @@ while True:
                 print(len(temp_database))
             else:
                 cv2.rectangle(frame,(x,y),(x+w,y+h),(0,0,255),2)
-            cv2.imshow('Video', frame)
+            cv2.putText(frame, 'People in the room: '+str(entered_people), (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,0,0), 2, cv2.LINE_AA)
+            cv2.imshow('Entry Camera', frame)
 
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
     else:
-        cv2.imshow('Video', frame)
+        cv2.putText(frame, 'People in the room: '+str(entered_people), (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,0,0), 2, cv2.LINE_AA)
+        cv2.imshow('Entry Camera', frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
         continue
     
     
-
+fps.stop()
+print("[INFO] elasped time: {:.2f}".format(fps.elapsed()))
+print("[INFO] approx. FPS: {:.2f}".format(fps.fps()))
 # When everything is done, release the capture
-cap.release()
+#cap.release()
 cv2.destroyAllWindows() 

@@ -20,8 +20,9 @@ da.create_table()
 print("done")
 #------database end------_#
 #-----------------------------------------------------#
-cap = cv2.VideoCapture(-1)
-#vs = webcam(-1).start()
+#cap = cv2.VideoCapture(1)
+vs = webcam(1).start()
+print("Camera found Successfully")
 #-----------------------------------------------------#
 f= Face_utils()
 #-----------------------------------------------------#
@@ -64,9 +65,10 @@ temp_database = update_tempdatabase()
 fps = FPS().start()
 while True:
     fps.update()
+    exited_person = len(da.read_from_db_only_exited())
     temp_database = update_tempdatabase()
-    ret, frame = cap.read()
-    #frame = vs.read()
+    #ret, frame = cap.read()
+    frame = vs.read()
     boxes = f.detect_face_haar_cascade(cascade_path,frame)
     check_tuple = type(boxes) is tuple
     #print(boxes)
@@ -76,7 +78,7 @@ while True:
             x,y,w,h = box[0],box[1],box[2],box[3]
             tup_box = (x,y,w,h)
             #print(tup_box)
-            if w>120 and h >120:
+            if w>60 and h >60:
                 cv2.rectangle(frame,(x,y),(x+w,y+h),(255,0,0),2)
                 face = f.return_face(frame,tup_box)
                 real_emd = f.face_embedding(model,face)
@@ -106,11 +108,13 @@ while True:
                 print(len(temp_database))
             else:
                 cv2.rectangle(frame,(x,y),(x+w,y+h),(0,0,255),2)
+            cv2.putText(frame, 'People exited: '+str(exited_person), (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,0,0), 2, cv2.LINE_AA)
             cv2.imshow('Exit Camera', frame)
 
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
     else:
+        cv2.putText(frame, 'People exited: '+str(exited_person), (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,0,0), 2, cv2.LINE_AA)
         cv2.imshow('Exit Camera', frame)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -121,7 +125,7 @@ while True:
 
 # When everything is done, release the capture
 fps.stop()
-print("[INFO] elasped time: {:.2f}".format(fps.elapsed()))
-print("[INFO] approx. FPS: {:.2f}".format(fps.fps()))
-cap.release()
+print("[INFO] elasped time for exit: {:.2f}".format(fps.elapsed()))
+print("[INFO] approx. FPS for exit: {:.2f}".format(fps.fps()))
+#cap.release()
 cv2.destroyAllWindows() 
