@@ -90,6 +90,9 @@ t.tic()
 fps = FPS().start()
 while True:
     fps.update()
+    co+=1 
+    t.toc()
+    print("frames",co)
     entered_people = len(da.read_from_db_only_entered())
     temp_database = update_temp_database()
     #ret, frame = cap.read()

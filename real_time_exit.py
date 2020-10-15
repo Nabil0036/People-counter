@@ -10,6 +10,7 @@ import pickle
 from datetime import datetime
 from imutils.video import WebcamVideoStream as webcam
 from imutils.video import FPS
+from pytictoc import TicToc
 #---------for database----------#
 #conn = sqlite3.connect('people.db')
 #c = conn.cursor()
@@ -29,6 +30,11 @@ f= Face_utils()
 model = load_model("facenet_keras.h5")
 cascade_path = "haarcascade_frontalface_default.xml"
 #-----------------------------------------------------#
+#------------------------------------#
+path_proto = 'deploy.prototxt.txt'
+path_model = 'res10_300x300_ssd_iter_140000.caffemodel'
+net = cv2.dnn.readNetFromCaffe(path_proto, path_model)
+#--------------------------------------#
 try:
     data = da.read_from_db()
     for d in data:
@@ -62,14 +68,21 @@ def update_tempdatabase():
 temp_database = update_tempdatabase()
 #---------------------------------------------------------#
 #---------------------------------------------------------------------------#
+co =0
+t = TicToc()
+t.tic()
 fps = FPS().start()
 while True:
     fps.update()
+    co+=1 
+    t.toc()
+    print("frames",co)
     exited_person = len(da.read_from_db_only_exited())
     temp_database = update_tempdatabase()
     #ret, frame = cap.read()
     frame = vs.read()
-    boxes = f.detect_face_haar_cascade(cascade_path,frame)
+    #boxes = f.detect_face_haar_cascade(cascade_path,frame)
+    boxes = f.detect_face_dnn(net,frame,0.5)
     check_tuple = type(boxes) is tuple
     #print(boxes)
     if len(boxes)>=1 and not check_tuple:
