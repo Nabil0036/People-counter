@@ -29,6 +29,18 @@ class Face_utils:
         return faces
 
     @staticmethod
+    def detect_face_dlib(image):
+        detector = dlib.get_frontal_face_detector()
+        #img = dlib.load_rgb_image(face_path)
+        dets = detector(image,1)
+        boxes=[]
+        for i, d in enumerate(dets):
+            (x,y,w,h)= face_utils.rect_to_bb(d)
+            box = (x,y,w,h)
+            boxes.append(box)
+        return boxes
+
+    @staticmethod
     def detect_face_dnn(net,image,con=0.9):
         boxes = []
         blob = cv2.dnn.blobFromImage(cv2.resize(image, (300, 300)), 1.0, (300, 300), (104.0, 177.0, 123.0))
@@ -46,6 +58,42 @@ class Face_utils:
             box = [x1_,y1_,w_,h_]
             boxes.append(box)
         return boxes
+    
+    @staticmethod
+    def update_temp_database_exit():
+        try:
+            temp_database=[]
+            data = da.read_from_db_only_entered()
+            for d in data:
+                with open('temp.jpg','wb') as file:
+                    file.write(d[1])
+                img = cv2.imread('temp.jpg')
+                x = f.face_embedding(model,img)
+                a_,b_,c_,d_,e_ = d[0],x,d[2],d[3],d[4]
+                single = (a_,b_,c_,d_,e_)
+                temp_database.append(single)
+        except:
+            temp_database = []
+
+        return temp_database
+    
+    @staticmethod
+    def update_temp_database_enter():
+        try:
+            temp_database=[]
+            data = da.read_from_db_only_entered()
+            for d in data:
+                with open('temp.jpg','wb') as file:
+                    file.write(d[1])
+                img = cv2.imread('temp.jpg')
+                x = f.face_embedding(model,img)
+                a_,b_,c_,d_,e_ = d[0],x,d[2],d[3],d[4]
+                single = (a_,b_,c_,d_,e_)
+                temp_database.append(single)
+        except:
+            temp_database = []
+
+        return temp_database
 
     @staticmethod
     def return_face(image,box):
@@ -74,63 +122,47 @@ class Face_utils:
 
 
 class Database_Utils:
-    @staticmethod
-    def create_table():
-        conn = sqlite3.connect('people.db')
-        c = conn.cursor()
-        c.execute('CREATE TABLE IF NOT EXISTS my_table(id REAL, image BLOB, entry_state TEXT, entry_time TEXT, exit_time TEXT)')
+    def __init__(self,db):
+        self.db = db
+        self.conn = sqlite3.connect(self.db)
+        self.c = self.conn.cursor()
 
-    @staticmethod
-    def data_entry(id, img,entry_state="",entry_time="",exit_time=""):
-        conn = sqlite3.connect('people.db')
-        c = conn.cursor()
+    def create_table(self):
+        self.c.execute('CREATE TABLE IF NOT EXISTS my_table(id REAL, image BLOB, entry_state TEXT, entry_time TEXT, exit_time TEXT)')
+
+    def data_entry(self,id, img,entry_state="",entry_time="",exit_time=""):
         cv2.imwrite("hudai.png",img)
         with open("hudai.png","rb") as file:
             pic = file.read()
+        self.c.execute("INSERT INTO my_table (id,image,entry_state,entry_time,exit_time) VALUES (?, ?, ?, ?, ?)",(id,pic,entry_state,entry_time,exit_time))
+        self.conn.commit()
 
-        c.execute("INSERT INTO my_table (id,image,entry_state,entry_time,exit_time) VALUES (?, ?, ?, ?, ?)",(id,pic,entry_state,entry_time,exit_time))
-        conn.commit()
-
-    @staticmethod
-    def read_from_db():
-        conn = sqlite3.connect('people.db')
-        c = conn.cursor()
-        c.execute('SELECT * FROM my_table')
-        data = c.fetchall()
+    def read_from_db(self):
+        self.c.execute('SELECT * FROM my_table')
+        data = self.c.fetchall()
         return data
 
-    @staticmethod
-    def read_from_db_only_entered():
-        conn = sqlite3.connect('people.db')
-        c = conn.cursor()
-        c.execute('SELECT * FROM my_table WHERE entry_state="Entered"')
-        data = c.fetchall()
+    def read_from_db_only_entered(self):
+        self.c.execute('SELECT * FROM my_table WHERE entry_state="Entered"')
+        data = self.c.fetchall()
         return data
 
-    @staticmethod
-    def read_from_db_only_exited():
-        conn = sqlite3.connect('people.db')
-        c = conn.cursor()
-        c.execute('SELECT * FROM my_table WHERE entry_state="Exited"')
-        data = c.fetchall()
+    def read_from_db_only_exited(self):
+        self.c.execute('SELECT * FROM my_table WHERE entry_state="Exited"')
+        data = self.c.fetchall()
         return data
 
-    @staticmethod
-    def read_last_entry():
-        conn = sqlite3.connect('people.db')
-        c = conn.cursor()
-        c.execute('SELECT * FROM my_table ORDER BY id DESC LIMIT 1')
-        return c.fetchone()[0]
+    def read_last_entry(self):
+        self.c.execute('SELECT * FROM my_table ORDER BY id DESC LIMIT 1')
+        return self.c.fetchone()[0]
 
-    @staticmethod
-    def write_to_file(data, filename):
-        with open(filename, 'wb') as file:
-            file.write(data)
+    def write_to_file(self,data, filename):
+        self.data = data
+        self.filename = filename
+        with open(self.filename, 'wb') as f:
+            f.write(data)
 
-    @staticmethod
     def change_state(c_id,time):
-        conn = sqlite3.connect('people.db')
-        c = conn.cursor()
-        c.execute('SELECT * FROM my_table')
-        c.execute('UPDATE my_table SET entry_state="Exited", exit_time=(?) WHERE id=(?)',(time,c_id))
-        conn.commit()
+        self.c.execute('SELECT * FROM my_table')
+        self.c.execute('UPDATE my_table SET entry_state="Exited", exit_time=(?) WHERE id=(?)',(time,c_id))
+        self.conn.commit()

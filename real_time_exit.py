@@ -15,7 +15,7 @@ from pytictoc import TicToc
 #conn = sqlite3.connect('people.db')
 #c = conn.cursor()
 
-da = Database_Utils()
+da = Database_Utils('people.db')
 da.create_table()
 
 print("done")
@@ -44,28 +44,9 @@ try:
         da.write_to_file(img_blob,'/faces'+'/'+str(id)+'.jpg')
 except:
     print("read_from_db_failed")
-# face_dir = '/home/pi/Peple_counter/faces'
-# fs = os.listdir(face_dir)
-# print(fs)
-# fs_mod = [int(i[:-4]) for i in fs]
-# print(fs_mod)
-def update_tempdatabase():
-    try:
-        temp_database=[]
-        data = da.read_from_db_only_entered()
-        for d in data:
-            with open('temp.jpg','wb') as file:
-                file.write(d[1])
-            img = cv2.imread('temp.jpg')
-            x = f.face_embedding(model,img)
-            a_,b_,c_,d_,e_ = d[0],x,d[2],d[3],d[4]
-            single = (a_,b_,c_,d_,e_)
-            temp_database.append(single)
-    except:
-        temp_database = []
 
-    return temp_database
-temp_database = update_tempdatabase()
+
+temp_database = f.update_temp_database_exit()
 #---------------------------------------------------------#
 #---------------------------------------------------------------------------#
 co =0
@@ -78,10 +59,11 @@ while True:
     t.toc()
     print("frames",co)
     exited_person = len(da.read_from_db_only_exited())
-    temp_database = update_tempdatabase()
+    temp_database = f.update_temp_database_exit()
     #ret, frame = cap.read()
     frame = vs.read()
     #boxes = f.detect_face_haar_cascade(cascade_path,frame)
+    #boxes = f.detect_face_dlib(frame)
     boxes = f.detect_face_dnn(net,frame,0.5)
     check_tuple = type(boxes) is tuple
     #print(boxes)
@@ -108,15 +90,6 @@ while True:
                             da.change_state(id,ti)
                         else:
                             count+=1
-                        # if count==len(temp_database):
-                        #     state = 'Entered'
-                        #     enty_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                        #     p+=1
-                        #     people = (p,real_emd,state,entry_time,"")
-                        #     temp_database.append(people)
-                        #     da.data_entry(p,face,state,enty_time,"")
-
-
 
                 print(len(temp_database))
             else:

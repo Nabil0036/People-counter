@@ -13,17 +13,16 @@ from imutils.video import WebcamVideoStream as webcam
 from imutils.video import FPS
 
 #---------for database----------#
-
-da = Database_Utils()
+da = Database_Utils('people.db')
 da.create_table()
 print("table create done")
 #------database end------_#
-#-----------------------------------------------------#
+#----------------------------------------#
 print("Starting Video.....")
 #cap = cv2.VideoCapture(0)
-vs = webcam(0).start()
+vs_entry = webcam(0).start()
 print("Entry Camera found")
-#-----------------------------------------------------#
+#------------------------------------------#
 f= Face_utils()
 #-----------------------------------------------------#
 print("Loading model.....")
@@ -50,25 +49,9 @@ try:
 except:
     print("read_from_db_failed")
 
-def update_temp_database():
-    try:
-        temp_database=[]
-        data = da.read_from_db_only_entered()
-        for d in data:
-            with open('temp.jpg','wb') as file:
-                file.write(d[1])
-            img = cv2.imread('temp.jpg')
-            x = f.face_embedding(model,img)
-            a_,b_,c_,d_,e_ = d[0],x,d[2],d[3],d[4]
-            single = (a_,b_,c_,d_,e_)
-            temp_database.append(single)
-    except:
-        temp_database = []
-
-    return temp_database
 
 
-temp_database = update_temp_database()
+temp_database = f.update_temp_database_enter()
 p=a
 #---------------------------------------------------------#
 # image = cv2.imread('/home/pi/Peple_counter/nabil2.jpg')
@@ -88,18 +71,33 @@ co =0
 t = TicToc()
 t.tic()
 fps = FPS().start()
+frames_after_insertion = 100
+temp_database = []
+last_id = p
+entered_entry = []
 while True:
     fps.update()
     co+=1 
     t.toc()
+    print(temp_database)
     print("frames",co)
     entered_people = len(da.read_from_db_only_entered())
-    temp_database = update_temp_database()
+    #temp_database = f.update_temp_database_enter()
     #ret, frame = cap.read()
     frame = vs.read()
-    #boxes = f.detect_face_haar_cascade(cascade_path,frame)
-    boxes = f.detect_face_dnn(net,frame,0.5)
+    boxes = f.detect_face_dnn(net,frame,0.7)
     #cheak for if the boxes are tuple or not
+    if co == frames_after_insertion:
+        for temp in temp_database:
+            t_id, emd,entered,entry_time, exit_time = temp
+            if t_id not in entered_entry:
+                da.data_entry(t_id,face,state,enty_time,"")
+                entered_entry.append(t_id)
+            else:
+                continue
+
+
+
     check_tuple = type(boxes) is tuple
     if len(boxes)>=1 and not check_tuple:
         for box in boxes:
@@ -107,7 +105,11 @@ while True:
             tup_box = (x,y,w,h)
             if w>60 and h >60:
                 cv2.rectangle(frame,(x,y),(x+w,y+h),(255,0,0),2)
-                face = f.return_face(frame,tup_box)
+                try:
+                    face = f.return_face(frame,tup_box)
+                except:
+                    cv2.imshow('Entry Camera', frame)
+                    continue
                 real_emd = f.face_embedding(model,face)
                 if len(temp_database)==0:
                     state = 'Entered'
@@ -115,7 +117,7 @@ while True:
                     p+=1
                     people = (p,real_emd,state,enty_time,"")
                     temp_database.append(people)
-                    da.data_entry(p,face,state,enty_time,"")
+                    #da.data_entry(p,face,state,enty_time,"")
                 else:
                     count =0
                     for t_d in temp_database:
@@ -131,8 +133,9 @@ while True:
                             p+=1
                             people = (p,real_emd,state,entry_time,"")
                             temp_database.append(people)
-                            da.data_entry(p,face,state,enty_time,"")
-
+                            #da.data_entry(p,face,state,enty_time,"")
+                        else:
+                            continue
 
 
                 print(len(temp_database))
@@ -148,7 +151,7 @@ while True:
         cv2.imshow('Entry Camera', frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
-        continue
+        
     
     
 fps.stop()
