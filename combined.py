@@ -65,6 +65,7 @@ def entry_func(frame):
     global temp_database
     entered_people = []
     boxes = f.detect_face_dnn(net,frame,0.7)
+    entered_people = list(filter(lambda x:x[2]=='Entered',temp_database))
     #cheak for if the boxes are tuple or not
     check_tuple = type(boxes) is tuple
     if len(boxes)>=1 and not check_tuple:
@@ -104,13 +105,55 @@ def entry_func(frame):
                         #da.data_entry(p,face,state,enty_time,"")
                     else:
                         continue
-            entered_people = list(filter(lambda x:x[2]=='Entered',temp_database))
             print(entered_people)
             cv2.putText(frame, 'People in the room: '+str(len(temp_database)), (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,0,0), 2, cv2.LINE_AA)
             cv2.imshow('Entry Camera', frame)
     else:
         cv2.putText(frame, 'People in the room: '+str(len(entered_people)), (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,0,0), 2, cv2.LINE_AA)
         cv2.imshow('Entry Camera', frame)
+    
+def exit_func(frame):
+    global temp_database
+    global p
+    exited_person = []
+    boxes = f.detect_face_dnn(net,frame,0.5)
+    check_tuple = type(boxes) is tuple
+    #print(boxes)
+    exited_person = list(filter(lambda x:x[2]=='Exited',temp_database))
+    if len(boxes)>=1 and not check_tuple:
+        for box in boxes:
+            #box = boxes[0]
+            x,y,w,h = box[0],box[1],box[2],box[3]
+            tup_box = (x,y,w,h)
+            #print(tup_box)
+            
+            cv2.rectangle(frame,(x,y),(x+w,y+h),(255,0,0),2)
+            face = f.return_face(frame,tup_box)
+            real_emd = f.face_embedding(model,face)
+            
+            if len(temp_database)==0:
+                print("Not possible")
+            else:
+                count =0
+                for w,t_d in enumerate(temp_database):
+                    id, emd,entered,entry_time, exit_time = t_d
+                    if f.compare_embeddings(emd,real_emd)<12:
+                        ti = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                        t_d_l = list(t_d)
+                        t_d_l[2] = 'Exited'
+                        t_d_l[4] = ti
+                        t_d_t = tuple(t_d_l)
+                        temp_database[w] = t_d_t
+                        break
+                    else:
+                        count+=1
+                    if count == len(temp_database):
+                        print("Something went wrong")
+            cv2.putText(frame, 'People exited: '+str(len(exited_person)), (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,0,0), 2, cv2.LINE_AA)
+            cv2.imshow('Exit Camera', frame)
+    else:
+        cv2.putText(frame, 'People exited: '+str(len(exited_person)), (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,0,0), 2, cv2.LINE_AA)
+        cv2.imshow('Exit Camera', frame)
         
 if __name__ == '__main__':
     while True:
@@ -118,7 +161,9 @@ if __name__ == '__main__':
         frame_exit = vs_exit.read()
 
         entry_func(frame_entry)
+        exit_func(frame_exit)
 
+        print(temp_database)
 
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
