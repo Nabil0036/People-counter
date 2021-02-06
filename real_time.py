@@ -20,7 +20,7 @@ print("table create done")
 #----------------------------------------#
 print("Starting Video.....")
 #cap = cv2.VideoCapture(0)
-vs_entry = webcam(0).start()
+vs = webcam(0).start()
 print("Entry Camera found")
 #------------------------------------------#
 f= Face_utils()
