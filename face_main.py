@@ -166,3 +166,14 @@ class Database_Utils:
         self.c.execute('SELECT * FROM my_table')
         self.c.execute('UPDATE my_table SET entry_state="Exited", exit_time=(?) WHERE id=(?)',(time,c_id))
         self.conn.commit()
+
+    def sync_database(self,temp_database,entered_ids):
+        for i,t_d in enumerate(temp_database):
+            a,b,c,d,e = t_d
+            if a not in entered_ids:
+                self.data_entry(a,b,c,d,e)
+                entered_ids.append(a)
+            if c=='Exited':
+                temp_database.remove(temp_database[i])
+
+

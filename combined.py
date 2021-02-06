@@ -11,6 +11,7 @@ from datetime import datetime
 from pytictoc import TicToc
 from imutils.video import WebcamVideoStream as webcam
 from imutils.video import FPS
+from multiprocessing import Process
 
 #---------for database----------#
 #------------------------------------------#
@@ -30,20 +31,20 @@ cascade_path = "haarcascade_frontalface_default.xml"
 #-----------------------------------------------------#
 try:
     a = da.read_last_entry()
-    print("aaassss",a)
 except:
     a=0
-    print("aaassss",a)
 
 i=0
 try:
     data = da.read_from_db()
+    entered_ids = list(lambda x:x[0])
     for d in data:
         img_blob = d[1]
         id = d[0]
         #/home/pi/Peple_counter/faces
         da.write_to_file(img_blob,'/faces'+'/'+str(id)+'.jpg')
 except:
+    entered_ids = []
     print("read_from_db_failed")
 temp_database = f.update_temp_database_enter()
 p=a
@@ -56,9 +57,10 @@ t = TicToc()
 t.tic()
 fps = FPS().start()
 frames_after_insertion = 100
-temp_database = []
-last_id = p
-entered_entry = []
+try:
+    temp_database = list(filter(lambda x : x[2]=='Entered',da.read_from_db()))
+except:
+    temp_database = []
 
 def entry_func(frame):
     global p
@@ -154,16 +156,15 @@ def exit_func(frame):
         cv2.putText(frame, 'People exited: '+str(len(exited_person)), (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,0,0), 2, cv2.LINE_AA)
         cv2.imshow('Exit Camera', frame)
         
-if __name__ == '__main__':
-    while True:
-        frame_entry = vs_entry.read()
-        frame_exit = vs_exit.read()
 
-        entry_func(frame_entry)
-        exit_func(frame_exit)
+while True:
+    co+=1
+    frame_entry = vs_entry.read()
+    frame_exit = vs_exit.read()
 
-        print(temp_database)
-
-
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
+    entry_func(frame_entry)
+    exit_func(frame_exit)
+    t.toc()
+    print(co)
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
