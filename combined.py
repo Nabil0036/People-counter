@@ -91,8 +91,7 @@ def entry_func(frame):
                 count =0
                 for t_d in temp_database:
                     id, emd,entered,entry_time, exit_time = t_d
-                    print("ss",f.compare_embeddings(emd,real_emd))
-                    if f.compare_embeddings(emd,real_emd)<12:
+                    if f.compare_embeddings(emd,real_emd)<12 and entered=='Entered':
                         break
                     else:
                         count+=1
@@ -137,7 +136,7 @@ def exit_func(frame):
                 count =0
                 for w,t_d in enumerate(temp_database):
                     id, emd,entered,entry_time, exit_time = t_d
-                    if f.compare_embeddings(emd,real_emd)<12:
+                    if f.compare_embeddings(emd,real_emd)<12 and entered=='Entered':
                         ti = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                         t_d_l = list(t_d)
                         t_d_l[2] = 'Exited'
