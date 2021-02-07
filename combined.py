@@ -28,6 +28,7 @@ print("Entry Camera found")
 print("Loading model.....")
 model = load_model("facenet_keras.h5")
 cascade_path = "haarcascade_frontalface_default.xml"
+print("Model Load Done!")
 #-----------------------------------------------------#
 try:
     a = da.read_last_entry()
@@ -54,13 +55,10 @@ net = cv2.dnn.readNetFromCaffe(path_proto, path_model)
 #--------------------------------------#
 co =0
 t = TicToc()
-t.tic()
 fps = FPS().start()
 frames_after_insertion = 100
-try:
-    temp_database = list(filter(lambda x : x[2]=='Entered',da.read_from_db()))
-except:
-    temp_database = []
+
+temp_database = []
 
 def entry_func(frame):
     global p
@@ -68,6 +66,7 @@ def entry_func(frame):
     entered_people = []
     boxes = f.detect_face_dnn(net,frame,0.7)
     entered_people = list(filter(lambda x:x[2]=='Entered',temp_database))
+    print("kuki",entered_people)
     #cheak for if the boxes are tuple or not
     check_tuple = type(boxes) is tuple
     if len(boxes)>=1 and not check_tuple:
@@ -86,13 +85,13 @@ def entry_func(frame):
                 state = 'Entered'
                 enty_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 p+=1
-                people = (p,real_emd,state,enty_time,"")
+                people = (p,real_emd,state,enty_time,"",face)
                 temp_database.append(people)
                 #da.data_entry(p,face,state,enty_time,"")
             else:
                 count =0
                 for t_d in temp_database:
-                    id, emd,entered,entry_time, exit_time = t_d
+                    id, emd,entered,entry_time, exit_time, ui = t_d
                     if f.compare_embeddings(emd,real_emd)<12 and entered=='Entered':
                         break
                     else:
@@ -101,13 +100,13 @@ def entry_func(frame):
                         state = 'Entered'
                         enty_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                         p+=1
-                        people = (p,real_emd,state,entry_time,"")
+                        people = (p,real_emd,state,entry_time,"",ui)
                         temp_database.append(people)
                         #da.data_entry(p,face,state,enty_time,"")
                     else:
                         continue
-            print(entered_people)
-            cv2.putText(frame, 'People in the room: '+str(len(temp_database)), (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,0,0), 2, cv2.LINE_AA)
+            # print(entered_people)
+            cv2.putText(frame, 'People in the room: '+str(len(entered_people)), (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,0,0), 2, cv2.LINE_AA)
             cv2.imshow('Entry Camera', frame)
     else:
         cv2.putText(frame, 'People in the room: '+str(len(entered_people)), (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,0,0), 2, cv2.LINE_AA)
@@ -137,7 +136,7 @@ def exit_func(frame):
             else:
                 count =0
                 for w,t_d in enumerate(temp_database):
-                    id, emd,entered,entry_time, exit_time = t_d
+                    id, emd,entered,entry_time, exit_time, _ = t_d
                     if f.compare_embeddings(emd,real_emd)<12 and entered=='Entered':
                         ti = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                         t_d_l = list(t_d)
@@ -156,7 +155,7 @@ def exit_func(frame):
         cv2.putText(frame, 'People exited: '+str(len(exited_person)), (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,0,0), 2, cv2.LINE_AA)
         cv2.imshow('Exit Camera', frame)
         
-
+t.tic()
 while True:
     co+=1
     frame_entry = vs_entry.read()
@@ -164,6 +163,9 @@ while True:
 
     entry_func(frame_entry)
     exit_func(frame_exit)
+    if co == 20:
+        da.sync_database(temp_database,entered_ids)
+        co =0
     t.toc()
     print(co)
     if cv2.waitKey(1) & 0xFF == ord('q'):
