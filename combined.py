@@ -167,7 +167,7 @@ if __name__=='__main__':
 
         entry_func(frame_entry)
         exit_func(frame_exit)
-        if co == 20:
+        if co == frames_after_insertion:
             exited = da.sync_database(temp_database,entered_ids,exited)
             co =0
         t.toc()
