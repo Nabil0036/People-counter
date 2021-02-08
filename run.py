@@ -7,8 +7,10 @@ def enter(q):
     sub.run(q)
 def exit(w):
     sub.run(w)
-
-en = mp.Process(target=enter,args=(["python","real_time.py"],))
-ex = mp.Process(target=exit,args=(["python","real_time_exit.py"],))
-en.start()
-ex.start()
+if __name__=='__main__':
+    en = mp.Process(target=enter,args=(["python","real_time.py"],))
+    ex = mp.Process(target=exit,args=(["python","real_time_exit.py"],))
+    en.start()
+    ex.start()
+    en.join()
+    ex.join()

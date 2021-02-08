@@ -1,4 +1,3 @@
-import dlib
 import cv2
 from face_main import Face_utils,Database_Utils
 import numpy as np

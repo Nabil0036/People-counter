@@ -1,4 +1,3 @@
-import dlib
 import cv2
 from face_main import Face_utils,Database_Utils
 import numpy as np
@@ -12,7 +11,7 @@ from pytictoc import TicToc
 from imutils.video import WebcamVideoStream as webcam
 from imutils.video import FPS
 from multiprocessing import Process
-
+from threading import Thread
 #---------for database----------#
 #------------------------------------------#
 f= Face_utils()
@@ -59,6 +58,7 @@ fps = FPS().start()
 frames_after_insertion = 100
 
 temp_database = []
+
 
 def entry_func(frame):
     global p
@@ -111,10 +111,11 @@ def entry_func(frame):
     else:
         cv2.putText(frame, 'People in the room: '+str(len(entered_people)), (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,0,0), 2, cv2.LINE_AA)
         cv2.imshow('Entry Camera', frame)
-    
+
 def exit_func(frame):
     global temp_database
     global p
+    global exited
     exited_person = []
     boxes = f.detect_face_dnn(net,frame,0.5)
     check_tuple = type(boxes) is tuple
@@ -149,24 +150,31 @@ def exit_func(frame):
                         count+=1
                     if count == len(temp_database):
                         print("Something went wrong")
-            cv2.putText(frame, 'People exited: '+str(len(exited_person)), (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,0,0), 2, cv2.LINE_AA)
+            cv2.putText(frame, 'People exited: '+str(exited), (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,0,0), 2, cv2.LINE_AA)
             cv2.imshow('Exit Camera', frame)
     else:
-        cv2.putText(frame, 'People exited: '+str(len(exited_person)), (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,0,0), 2, cv2.LINE_AA)
+        cv2.putText(frame, 'People exited: '+str(exited), (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,0,0), 2, cv2.LINE_AA)
         cv2.imshow('Exit Camera', frame)
         
 t.tic()
-while True:
-    co+=1
-    frame_entry = vs_entry.read()
-    frame_exit = vs_exit.read()
+exited = 0
+if __name__=='__main__':
+    while True:
+        fps.update()
+        co+=1
+        frame_entry = vs_entry.read()
+        frame_exit = vs_exit.read()
 
-    entry_func(frame_entry)
-    exit_func(frame_exit)
-    if co == 20:
-        da.sync_database(temp_database,entered_ids)
-        co =0
-    t.toc()
-    print(co)
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
+        entry_func(frame_entry)
+        exit_func(frame_exit)
+        if co == 20:
+            exited = da.sync_database(temp_database,entered_ids,exited)
+            co =0
+        t.toc()
+        print(co)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+fps.stop()
+print("[INFO] elasped time: {:.2f}".format(fps.elapsed()))
+print("[INFO] approx. FPS: {:.2f}".format(fps.fps()))

@@ -1,22 +1,9 @@
 import cv2
-import dlib
 import numpy as np
 from imutils import face_utils
 import sqlite3
 
 class Face_utils:
-    @staticmethod
-    def detect_face(face_path):
-        detector = dlib.get_frontal_face_detector()
-        img = dlib.load_rgb_image(face_path)
-        dets = detector(img,1)
-        boxes=[]
-        for i, d in enumerate(dets):
-            (x,y,w,h)= face_utils.rect_to_bb(d)
-            box = (x,y,w,h)
-            boxes.append(box)
-        return boxes
-
     @staticmethod
     def detect_face_haar_cascade(haar_cascade_path,image):
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -27,18 +14,6 @@ class Face_utils:
         if (len(faces)==0):
             return None, None
         return faces
-
-    @staticmethod
-    def detect_face_dlib(image):
-        detector = dlib.get_frontal_face_detector()
-        #img = dlib.load_rgb_image(face_path)
-        dets = detector(image,1)
-        boxes=[]
-        for i, d in enumerate(dets):
-            (x,y,w,h)= face_utils.rect_to_bb(d)
-            box = (x,y,w,h)
-            boxes.append(box)
-        return boxes
 
     @staticmethod
     def detect_face_dnn(net,image,con=0.9):
@@ -167,7 +142,7 @@ class Database_Utils:
         self.c.execute('UPDATE my_table SET entry_state="Exited", exit_time=(?) WHERE id=(?)',(time,c_id))
         self.conn.commit()
 
-    def sync_database(self,temp_database,entered_ids):
+    def sync_database(self,temp_database,entered_ids,exited=0):
         for i,t_d in enumerate(temp_database):
             a,b,c,d,e,face = t_d
             if a not in entered_ids:
@@ -175,5 +150,6 @@ class Database_Utils:
                 entered_ids.append(a)
             if c=='Exited':
                 temp_database.remove(temp_database[i])
-
+                exited+=1
+        return exited
 
