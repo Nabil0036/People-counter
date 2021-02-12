@@ -12,6 +12,8 @@ from imutils.video import WebcamVideoStream as webcam
 from imutils.video import FPS
 from multiprocessing import Process
 from threading import Thread
+
+
 #---------for database----------#
 #------------------------------------------#
 f= Face_utils()
@@ -29,6 +31,15 @@ model = load_model("facenet_keras.h5")
 cascade_path = "haarcascade_frontalface_default.xml"
 print("Model Load Done!")
 #-----------------------------------------------------#
+#-----------------Dummy Recognition----------------------------------------#
+image = cv2.imread('dummy.jpg')
+faces = f.detect_face_haar_cascade('haarcascade_frontalface_default.xml',image)
+box = faces[0]
+x1,y1,x2,y2 = box[0],box[1],box[2],box[3]
+print(x1,y2,x2,y2)
+roi = f.return_face(image,box)
+nab_emd = f.face_embedding(model, roi)
+#---------------------------------------------------------------------------#
 try:
     a = da.read_last_entry()
 except:
@@ -36,17 +47,23 @@ except:
 
 i=0
 try:
-    data = da.read_from_db()
-    entered_ids = list(lambda x:x[0])
+    data = da.read_from_db_only_entered()
+    entered_ids = [x[0] for x in data]
+    #print("sssssssssssss",data[0])
+    print("---Entered IDs------------",entered_ids)
+    temp_database = []
     for d in data:
-        img_blob = d[1]
-        id = d[0]
-        #/home/pi/Peple_counter/faces
-        da.write_to_file(img_blob,'/faces'+'/'+str(id)+'.jpg')
+        with open('temp.jpg','wb') as file:
+            file.write(d[1])
+        img = cv2.imread('temp.jpg')
+        x = f.face_embedding(model,img)
+        single = (d[0],x,d[2],d[3],d[4],img)
+        temp_database.append(single)
+        print("done")
 except:
+    temp_database = []
     entered_ids = []
     print("read_from_db_failed")
-temp_database = f.update_temp_database_enter()
 p=a
 path_proto = 'deploy.prototxt.txt'
 path_model = 'res10_300x300_ssd_iter_140000.caffemodel'
@@ -55,10 +72,7 @@ net = cv2.dnn.readNetFromCaffe(path_proto, path_model)
 co =0
 t = TicToc()
 fps = FPS().start()
-frames_after_insertion = 100
-
-temp_database = []
-
+frames_after_insertion = 20
 
 def entry_func(frame):
     global p
@@ -87,7 +101,6 @@ def entry_func(frame):
                 p+=1
                 people = (p,real_emd,state,enty_time,"",face)
                 temp_database.append(people)
-                #da.data_entry(p,face,state,enty_time,"")
             else:
                 count =0
                 for t_d in temp_database:
@@ -102,7 +115,6 @@ def entry_func(frame):
                         p+=1
                         people = (p,real_emd,state,entry_time,"",ui)
                         temp_database.append(people)
-                        #da.data_entry(p,face,state,enty_time,"")
                     else:
                         continue
             # print(entered_people)
@@ -158,6 +170,7 @@ def exit_func(frame):
         
 t.tic()
 exited = 0
+print("Temp database before exec",temp_database[0])
 if __name__=='__main__':
     while True:
         fps.update()
@@ -167,6 +180,15 @@ if __name__=='__main__':
 
         entry_func(frame_entry)
         exit_func(frame_exit)
+        # t1 = Thread(target=entry_func,args=(frame_entry,))
+        # t1.daemon = True
+        # t2 = Thread(target=exit_func,args=(frame_exit,))
+        # t2.daemon = True
+
+        # t1.start()
+        # t2.start()
+        # t1.join()
+        # t2.join()
         if co == frames_after_insertion:
             exited = da.sync_database(temp_database,entered_ids,exited)
             co =0
