@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 from imutils import face_utils
 import sqlite3
+import dlib
 
 class Face_utils:
     @staticmethod
@@ -32,6 +33,27 @@ class Face_utils:
             h_ = y2_ - y1_
             box = [x1_,y1_,w_,h_]
             boxes.append(box)
+        return boxes
+
+    @staticmethod
+    def detect_face_dlib(image):
+        detector = dlib.get_frontal_face_detector()
+        #img = dlib.load_rgb_image(face_path)
+        dets = detector(image, 1)
+        boxes = []
+        for i, d in enumerate(dets):
+            (x, y, w, h) = face_utils.rect_to_bb(d)
+            box = (x, y, w, h)
+            boxes.append(box)
+        return boxes
+
+    @staticmethod
+    def detect_face_mtcnn(detector, image, con=0):
+        faces = detector.detect_faces(image)
+        boxes = []
+        for face in faces:
+            if face['confidence'] > con:
+                boxes.append(face['box'])
         return boxes
     
     @staticmethod

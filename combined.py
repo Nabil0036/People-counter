@@ -25,7 +25,7 @@ print("table create done")
 print("Starting Video.....")
 vs_entry = webcam(0).start()
 vs_exit = webcam(1).start()
-print("Entry Camera found")
+print("Camera found")
 print("Loading model.....")
 model = load_model("facenet_keras.h5")
 cascade_path = "haarcascade_frontalface_default.xml"
@@ -77,17 +77,19 @@ frames_after_insertion = 20
 def entry_func(frame):
     global p
     global temp_database
+    global flag
     entered_people = []
-    boxes = f.detect_face_dnn(net,frame,0.7)
+    boxes = f.detect_face_dnn(net,frame,0.9)
     entered_people = list(filter(lambda x:x[2]=='Entered',temp_database))
-    print("kuki",entered_people)
+    # print("kuki",entered_people)
     #cheak for if the boxes are tuple or not
+    print("SSSSSSSSSSSSSSSSSSSSSSS",temp_database)
     check_tuple = type(boxes) is tuple
     if len(boxes)>=1 and not check_tuple:
         for box in boxes:
+            print("loop1")
             x,y,w,h = box[0],box[1],box[2],box[3]
             tup_box = (x,y,w,h)
-            
             cv2.rectangle(frame,(x,y),(x+w,y+h),(255,0,0),2)
             try:
                 face = f.return_face(frame,tup_box)
@@ -113,8 +115,9 @@ def entry_func(frame):
                         state = 'Entered'
                         enty_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                         p+=1
-                        people = (p,real_emd,state,entry_time,"",ui)
+                        people = (p,real_emd,state,entry_time,"",face)
                         temp_database.append(people)
+                        break
                     else:
                         continue
             # print(entered_people)
@@ -129,7 +132,7 @@ def exit_func(frame):
     global p
     global exited
     exited_person = []
-    boxes = f.detect_face_dnn(net,frame,0.5)
+    boxes = f.detect_face_dnn(net,frame,0.9)
     check_tuple = type(boxes) is tuple
     #print(boxes)
     exited_person = list(filter(lambda x:x[2]=='Exited',temp_database))
@@ -141,7 +144,11 @@ def exit_func(frame):
             #print(tup_box)
             
             cv2.rectangle(frame,(x,y),(x+w,y+h),(255,0,0),2)
-            face = f.return_face(frame,tup_box)
+            try:
+                face = f.return_face(frame,tup_box)
+            except:
+                cv2.imshow('Exit Camera', frame)
+                continue
             real_emd = f.face_embedding(model,face)
             
             if len(temp_database)==0:
@@ -170,7 +177,7 @@ def exit_func(frame):
         
 t.tic()
 exited = 0
-print("Temp database before exec",temp_database[0])
+print("Temp database before exec",temp_database)
 if __name__=='__main__':
     while True:
         fps.update()
