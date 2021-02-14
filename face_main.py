@@ -159,7 +159,7 @@ class Database_Utils:
         with open(self.filename, 'wb') as f:
             f.write(data)
 
-    def change_state(c_id,time):
+    def change_state(self,c_id,time):
         self.c.execute('SELECT * FROM my_table')
         self.c.execute('UPDATE my_table SET entry_state="Exited", exit_time=(?) WHERE id=(?)',(time,c_id))
         self.conn.commit()
@@ -171,6 +171,7 @@ class Database_Utils:
                 self.data_entry(a,face,c,d,e)
                 entered_ids.append(a)
             if c=='Exited':
+                self.change_state(a,e)
                 temp_database.remove(temp_database[i])
                 exited+=1
         return exited

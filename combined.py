@@ -83,7 +83,6 @@ def entry_func(frame):
     entered_people = list(filter(lambda x:x[2]=='Entered',temp_database))
     # print("kuki",entered_people)
     #cheak for if the boxes are tuple or not
-    print("SSSSSSSSSSSSSSSSSSSSSSS",temp_database)
     check_tuple = type(boxes) is tuple
     if len(boxes)>=1 and not check_tuple:
         for box in boxes:
